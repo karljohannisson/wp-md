@@ -54,13 +54,20 @@ def table_to_markdown(match):
 
 for entry in feed.entries:
     
-    metadata_string = f"""---
-    'title': {entry.title}
-    'date': {entry.link}
-    'filename': {re.sub(r'.*?/.*?/.*?/(.*?)/', r'\1', entry.link)}
----"""
+    print(entry)
+    print(entry.wp_post_date)
 
     entry_filename = re.sub(r'.*?/.*?/.*?/(.*?)/', r'\1', entry.link) + '.md'
+    if MY_URL in entry_filename or entry.wp_status != 'publish' or entry.wp_post_type != 'post':
+        continue
+    
+    metadata_string = f"""---
+    'title': {entry.title}
+    'date': {re.sub(r'(\d{4}-\d{2}-\d{2}).*', r'\1', entry.wp_post_date)}
+    'url_name': {re.sub(r'.*?/.*?/.*?/(.*?)/', r'\1', entry.link)}
+---"""
+
+    
     #entry_filename = entry.title
     #entry_filename = entry_filename.lower()
     #entry_filename = re.sub(r'[\s\W]', '-', entry_filename)
