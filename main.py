@@ -62,7 +62,7 @@ for entry in feed.entries:
         continue
     
     metadata_string = f"""---
-    'title': {entry.title}
+    'title': "{entry.title}"
     'date': {re.sub(r'(\d{4}-\d{2}-\d{2}).*', r'\1', entry.wp_post_date)}
     'url_name': {re.sub(r'.*?/.*?/.*?/(.*?)/', r'\1', entry.link)}
 ---"""
@@ -108,7 +108,7 @@ for entry in feed.entries:
     entry_content = re.sub(r'<strong>(.*)</strong>', r'**\1**', entry_content)
 
     # links
-    entry_content = re.sub(r'<a .*?href=".*?/.*?/.*?' + MY_URL + r'.*?/(.*?)".*?>(.*?)<.*?/a>', r'[\2](\1)', entry_content)
+    entry_content = re.sub(r'<a .*?href=".*?/.*?/.*?' + MY_URL + r'.*?/(.*?)".*?>(.*?)<.*?/a>', r'[\2](/\1)', entry_content)
     entry_content = re.sub(r'<a .*?href="(.*?)".*?>(.*?)<.*?/a>', r'[\2](\1)', entry_content)
 
     # images
@@ -121,7 +121,7 @@ for entry in feed.entries:
     download_images(all_images)
     
     #change path of images to local:
-    entry_content = re.sub(r'\!\[(.*?)\]\((.+\/)(.+)\)', r'![\1](img/\3)', entry_content)
+    entry_content = re.sub(r'\!\[(.*?)\]\((.+\/)(.+)\)', r'![\1](/img/\3)', entry_content)
     
     #tables
     entry_content = re.sub(r'<!-- wp:table -->.*?<table>(.*?)</table>.*?<!-- /wp:table -->', table_to_markdown, entry_content, flags=re.DOTALL)
