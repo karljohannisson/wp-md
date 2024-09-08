@@ -5,6 +5,7 @@ import os
 
 IMG_DIR = 'img'
 CONTENT_DIR = 'content'
+MY_URL = 'karljohannisson.com'
 
 if not os.path.exists(IMG_DIR):
     os.makedirs(IMG_DIR)
@@ -39,15 +40,35 @@ def write_md_to_file(entry_filename, entry_content):
     with open(filename, 'w') as file:
         file.write(entry_content)
 
+def table_to_markdown(match):
+    table = match.group(1)
+    rows = re.findall(r'<tr>(.*?)</tr>', table, re.DOTALL)
+    md_rows = []
+    for i, row in enumerate(rows):
+        cells = re.findall(r'<t[hd]>(.*?)</t[hd]>', row)
+        cells = [re.sub(r'</?em>', '*', cell) for cell in cells]  # Handle emphasis
+        md_rows.append("| " + " | ".join(cells) + " |")
+        if i == 0:  # After header row
+            md_rows.append("| " + " | ".join(["---"] * len(cells)) + " |")
+    return "\n\n" + "\n".join(md_rows) + "\n\n"
+
 for entry in feed.entries:
     
-    entry_filename = entry.title
-    entry_filename = entry_filename.lower()
-    entry_filename = re.sub(r'[\s\W]', '-', entry_filename)
-    entry_filename = entry_filename + '.md'
+    metadata_string = f"""---
+    'title': {entry.title}
+    'date': {entry.link}
+    'filename': {re.sub(r'.*?/.*?/.*?/(.*?)/', r'\1', entry.link)}
+---"""
 
-    #with open('test.md', 'r') as file:
-    #    entry_content = file.read()
+    entry_filename = re.sub(r'.*?/.*?/.*?/(.*?)/', r'\1', entry.link) + '.md'
+    #entry_filename = entry.title
+    #entry_filename = entry_filename.lower()
+    #entry_filename = re.sub(r'[\s\W]', '-', entry_filename)
+    #entry_filename = entry_filename + '.md'
+
+    #if entry_filename != 'quitting-alcohol-and-its-benefits.md':
+    #    continue
+
 
     entry_content = str(entry.content[0].value)
     #clean paragraphs
@@ -79,10 +100,14 @@ for entry in feed.entries:
     #bold
     entry_content = re.sub(r'<strong>(.*)</strong>', r'**\1**', entry_content)
 
+    # links
+    entry_content = re.sub(r'<a .*?href=".*?/.*?/.*?' + MY_URL + r'.*?/(.*?)".*?>(.*?)<.*?/a>', r'[\2](\1)', entry_content)
+    entry_content = re.sub(r'<a .*?href="(.*?)".*?>(.*?)<.*?/a>', r'[\2](\1)', entry_content)
+
     # images
     entry_content = re.sub(r'<!-- (?:|\/)wp:image.*?-->', r'', entry_content)
-    entry_content = re.sub(r'<figure.*<img src="(.*?)".*?<figcaption.*?>(.*?)<.*', r'![\2](\1)', entry_content)
-    entry_content = re.sub(r'<figure.*<img src="(.*?)".*', r'![](\1)', entry_content)
+    entry_content = re.sub(r'<figure.*<img.*?src="(.*?)".*?<figcaption.*?>(.*?)<.*', r'![\2](\1)', entry_content)
+    entry_content = re.sub(r'<figure.*<img.*?src="(.*?)".*', r'![](\1)', entry_content)
     
     #download all images
     all_images = re.findall(r'\!\[.*?\]\((.+)\)', entry_content)
@@ -91,6 +116,10 @@ for entry in feed.entries:
     #change path of images to local:
     entry_content = re.sub(r'\!\[(.*?)\]\((.+\/)(.+)\)', r'![\1](img/\3)', entry_content)
     
+    #tables
+    entry_content = re.sub(r'<!-- wp:table -->.*?<table>(.*?)</table>.*?<!-- /wp:table -->', table_to_markdown, entry_content, flags=re.DOTALL)
+
+    entry_content = metadata_string + entry_content
     write_md_to_file(entry_filename, entry_content)
 
     print(entry_content)
